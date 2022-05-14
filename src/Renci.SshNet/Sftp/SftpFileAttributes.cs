@@ -56,9 +56,24 @@ namespace Renci.SshNet.Sftp
 
         #endregion
 
-        private bool _isBitFiledsBitSet;
-        private bool _isUIDBitSet;
-        private bool _isGroupIDBitSet;
+        /// <summary>
+        /// File Type
+        /// </summary>
+        private uint _fileType;
+
+        /// <summary>
+        /// Set-user-ID bit
+        /// </summary>
+        private bool _isSetUserIDBitSet;
+
+        /// <summary>
+        /// Set-group-ID bit
+        /// </summary>
+        private bool _isSetGroupIDBitSet;
+
+        /// <summary>
+        /// Sticky bit
+        /// </summary>
         private bool _isStickyBitSet;
 
         private readonly DateTime _originalLastAccessTimeUtc;
@@ -324,8 +339,7 @@ namespace Renci.SshNet.Sftp
             {
                 uint permission = 0;
 
-                if (_isBitFiledsBitSet)
-                    permission = permission | S_IFMT;
+                permission = permission | _fileType;
 
                 if (IsSocket)
                     permission = permission | S_IFSOCK;
@@ -348,10 +362,10 @@ namespace Renci.SshNet.Sftp
                 if (IsNamedPipe)
                     permission = permission | S_IFIFO;
 
-                if (_isUIDBitSet)
+                if (_isSetUserIDBitSet)
                     permission = permission | S_ISUID;
 
-                if (_isGroupIDBitSet)
+                if (_isSetGroupIDBitSet)
                     permission = permission | S_ISGID;
 
                 if (_isStickyBitSet)
@@ -388,25 +402,25 @@ namespace Renci.SshNet.Sftp
             }
             private set
             {
-                _isBitFiledsBitSet = ((value & S_IFMT) == S_IFMT);
+                _fileType = (value & S_IFMT);
 
-                IsSocket = ((value & S_IFSOCK) == S_IFSOCK);
+                IsSocket = ((value & S_IFMT) == S_IFSOCK);
 
-                IsSymbolicLink = ((value & S_IFLNK) == S_IFLNK);
+                IsSymbolicLink = ((value & S_IFMT) == S_IFLNK);
 
-                IsRegularFile = ((value & S_IFREG) == S_IFREG);
+                IsRegularFile = ((value & S_IFMT) == S_IFREG);
 
-                IsBlockDevice = ((value & S_IFBLK) == S_IFBLK);
+                IsBlockDevice = ((value & S_IFMT) == S_IFBLK);
 
-                IsDirectory = ((value & S_IFDIR) == S_IFDIR);
+                IsDirectory = ((value & S_IFMT) == S_IFDIR);
 
-                IsCharacterDevice = ((value & S_IFCHR) == S_IFCHR);
+                IsCharacterDevice = ((value & S_IFMT) == S_IFCHR);
 
-                IsNamedPipe = ((value & S_IFIFO) == S_IFIFO);
+                IsNamedPipe = ((value & S_IFMT) == S_IFIFO);
 
-                _isUIDBitSet = ((value & S_ISUID) == S_ISUID);
+                _isSetUserIDBitSet = ((value & S_ISUID) == S_ISUID);
 
-                _isGroupIDBitSet = ((value & S_ISGID) == S_ISGID);
+                _isSetGroupIDBitSet = ((value & S_ISGID) == S_ISGID);
 
                 _isStickyBitSet = ((value & S_ISVTX) == S_ISVTX);
 
