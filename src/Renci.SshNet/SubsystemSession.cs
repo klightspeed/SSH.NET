@@ -45,6 +45,16 @@ namespace Renci.SshNet
         public event EventHandler<EventArgs> Disconnected;
 
         /// <summary>
+        /// Occurs when a message is sent to the server
+        /// </summary>
+        public event EventHandler<RawMessageEventArgs> MessageSent;
+
+        /// <summary>
+        /// Occurs when a message is received from the server
+        /// </summary>
+        public event EventHandler<RawMessageEventArgs> MessageReceived;
+
+        /// <summary>
         /// Gets the channel associated with this session.
         /// </summary>
         /// <value>
@@ -171,6 +181,24 @@ namespace Renci.SshNet
         /// </summary>
         /// <param name="data">The data.</param>
         protected abstract void OnDataReceived(byte[] data);
+
+        protected void OnMessageSent(object sender, RawMessageEventArgs message)
+        {
+            var messageSent = MessageSent;
+            if (messageSent != null)
+            {
+                messageSent(sender, message);
+            }
+        }
+
+        protected void OnMessageReceived(object sender, RawMessageEventArgs message)
+        {
+            var messageReceived = MessageReceived;
+            if (messageReceived != null)
+            {
+                messageReceived(sender, message);
+            }
+        }
 
         /// <summary>
         /// Raises the error.

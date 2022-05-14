@@ -2388,6 +2388,10 @@ namespace Renci.SshNet
                                                                _operationTimeout,
                                                                ConnectionInfo.Encoding,
                                                                ServiceFactory.CreateSftpResponseFactory());
+
+            sftpSession.MessageSent += OnMessageSent;
+            sftpSession.MessageReceived += OnMessageReceived;
+
             try
             {
                 sftpSession.Connect();

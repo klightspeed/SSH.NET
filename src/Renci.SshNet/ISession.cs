@@ -49,6 +49,16 @@ namespace Renci.SshNet
         WaitHandle MessageListenerCompleted { get; }
 
         /// <summary>
+        /// Occurs when a message is sent to the server
+        /// </summary>
+        event EventHandler<RawMessageEventArgs> MessageSent;
+
+        /// <summary>
+        /// Occurs when a message is received from the server
+        /// </summary>
+        event EventHandler<RawMessageEventArgs> MessageReceived;
+
+        /// <summary>
         /// Connects to the server.
         /// </summary>
         /// <exception cref="SocketException">Socket connection to the SSH server or proxy server could not be established, or an error occurred while resolving the hostname.</exception>

@@ -152,6 +152,16 @@ namespace Renci.SshNet
         public event EventHandler<HostKeyEventArgs> HostKeyReceived;
 
         /// <summary>
+        /// Occurs when a message is received from the server
+        /// </summary>
+        public event EventHandler<RawMessageEventArgs> MessageReceived;
+
+        /// <summary>
+        /// Occurs when a message is sent to the server
+        /// </summary>
+        public event EventHandler<RawMessageEventArgs> MessageSent;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="BaseClient"/> class.
         /// </summary>
         /// <param name="connectionInfo">The connection info.</param>
@@ -369,6 +379,34 @@ namespace Renci.SshNet
         {
         }
 
+        /// <summary>
+        /// Called when a message is sent to the server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="message"></param>
+        protected void OnMessageSent(object sender, RawMessageEventArgs message)
+        {
+            var messageSent = MessageSent;
+            if (messageSent != null)
+            {
+                messageSent(sender, message);
+            }
+        }
+
+        /// <summary>
+        /// Called when a message is received from the server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="message"></param>
+        protected void OnMessageReceived(object sender, RawMessageEventArgs message)
+        {
+            var messageReceived = MessageReceived;
+            if (messageReceived != null)
+            {
+                messageReceived(sender, message);
+            }
+        }
+
         private void Session_ErrorOccured(object sender, ExceptionEventArgs e)
         {
             var handler = ErrorOccurred;
@@ -385,6 +423,16 @@ namespace Renci.SshNet
             {
                 handler(this, e);
             }
+        }
+
+        private void Session_MessageReceived(object sender, RawMessageEventArgs message)
+        {
+            OnMessageReceived(sender, message);
+        }
+
+        private void Session_MessageSent(object sender, RawMessageEventArgs message)
+        {
+            OnMessageSent(sender, message);
         }
 
 #region IDisposable Members
@@ -520,6 +568,8 @@ namespace Renci.SshNet
             var session = _serviceFactory.CreateSession(ConnectionInfo, _serviceFactory.CreateSocketFactory());
             session.HostKeyReceived += Session_HostKeyReceived;
             session.ErrorOccured += Session_ErrorOccured;
+            session.MessageSent += Session_MessageSent;
+            session.MessageReceived += Session_MessageReceived;
 
             try
             {
@@ -539,6 +589,8 @@ namespace Renci.SshNet
             var session = _serviceFactory.CreateSession(ConnectionInfo, _serviceFactory.CreateSocketFactory());
             session.HostKeyReceived += Session_HostKeyReceived;
             session.ErrorOccured += Session_ErrorOccured;
+            session.MessageSent += Session_MessageSent;
+            session.MessageReceived += Session_MessageReceived;
 
             try
             {
@@ -557,6 +609,8 @@ namespace Renci.SshNet
         {
             session.ErrorOccured -= Session_ErrorOccured;
             session.HostKeyReceived -= Session_HostKeyReceived;
+            session.MessageSent -= Session_MessageSent;
+            session.MessageReceived -= Session_MessageReceived;
             session.Dispose();
         }
 

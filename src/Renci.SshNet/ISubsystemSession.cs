@@ -26,6 +26,16 @@ namespace Renci.SshNet
         bool IsOpen { get; }
 
         /// <summary>
+        /// Occurs when a message is sent to the server
+        /// </summary>
+        event EventHandler<RawMessageEventArgs> MessageSent;
+
+        /// <summary>
+        /// Occurs when a message is received from the server
+        /// </summary>
+        event EventHandler<RawMessageEventArgs> MessageReceived;
+
+        /// <summary>
         /// Connects the subsystem using a new SSH channel session.
         /// </summary>
         /// <exception cref="InvalidOperationException">The session is already connected.</exception>

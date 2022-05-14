@@ -81,6 +81,9 @@ namespace Renci.SshNet.Sftp
         internal void SendMessage(SftpMessage sftpMessage)
         {
             var data = sftpMessage.GetBytes();
+
+            OnMessageSent(this, new RawMessageEventArgs("sftp", data, 4, data.Length - 4));
+
             SendData(data);
         }
 
@@ -341,6 +344,8 @@ namespace Renci.SshNet.Sftp
 
         private bool TryLoadSftpMessage(byte[] packetData, int offset, int count)
         {
+            OnMessageReceived(this, new RawMessageEventArgs("sftp", packetData, offset, count));
+
             // Create SFTP message
             var response = _sftpResponseFactory.Create(ProtocolVersion, packetData[offset], Encoding);
             // Load message data into it

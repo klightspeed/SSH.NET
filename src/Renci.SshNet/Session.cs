@@ -348,6 +348,16 @@ namespace Renci.SshNet
         public ConnectionInfo ConnectionInfo { get; private set; }
 
         /// <summary>
+        /// Occurs when a message is sent to the server
+        /// </summary>
+        public event EventHandler<RawMessageEventArgs> MessageSent;
+
+        /// <summary>
+        /// Occurs when a message is received from the server
+        /// </summary>
+        public event EventHandler<RawMessageEventArgs> MessageReceived;
+
+        /// <summary>
         /// Occurs when an error occurred.
         /// </summary>
         public event EventHandler<ExceptionEventArgs> ErrorOccured;
@@ -590,8 +600,33 @@ namespace Renci.SshNet
                     _socket = _serviceFactory.CreateConnector(ConnectionInfo, _socketFactory)
                                              .Connect(ConnectionInfo);
 
+                    if (MessageSent != null)
+                    {
+                        var msgdata = new byte[256 + 5];
+                        var strlen = Encoding.UTF8.GetBytes(ClientVersion, 0, ClientVersion.Length, msgdata, 5);
+                        msgdata[0] = 0;
+                        msgdata[1] = unchecked((byte)(strlen >> 24));
+                        msgdata[2] = unchecked((byte)(strlen >> 16));
+                        msgdata[3] = unchecked((byte)(strlen >> 8));
+                        msgdata[4] = unchecked((byte)strlen);
+                        MessageSent(this, new RawMessageEventArgs("SSH", msgdata, 0, strlen + 5));
+                    }
+
                     var serverIdentification = _serviceFactory.CreateProtocolVersionExchange()
                                                               .Start(ClientVersion, _socket, ConnectionInfo.Timeout);
+
+                    if (MessageReceived != null)
+                    {
+                        var msgdata = new byte[256 + 5];
+                        var serverVersion = serverIdentification.ToString();
+                        var strlen = Encoding.UTF8.GetBytes(serverVersion, 0, serverVersion.Length, msgdata, 5);
+                        msgdata[0] = 0;
+                        msgdata[1] = unchecked((byte)(strlen >> 24));
+                        msgdata[2] = unchecked((byte)(strlen >> 16));
+                        msgdata[3] = unchecked((byte)(strlen >> 8));
+                        msgdata[4] = unchecked((byte)strlen);
+                        MessageReceived(this, new RawMessageEventArgs("SSH", msgdata, 0, strlen + 5));
+                    }
 
                     // Set connection versions
                     ServerVersion = ConnectionInfo.ServerVersion = serverIdentification.ToString();
@@ -1014,6 +1049,8 @@ namespace Renci.SshNet
 
             var paddingMultiplier = _clientCipher == null ? (byte) 8 : Math.Max((byte) 8, _serverCipher.MinimumSize);
             var packetData = message.GetPacket(paddingMultiplier, _clientCompression);
+
+            OnMessageSent(message, paddingMultiplier);
 
             // take a write lock to ensure the outbound packet sequence number is incremented
             // atomically, and only after the packet has actually been sent
@@ -1700,6 +1737,25 @@ namespace Renci.SshNet
                 handlers(this, e);
         }
 
+        private void OnMessageSent(Message message, byte paddingMultiplier)
+        {
+            var messageSent = MessageSent;
+            if (messageSent != null)
+            {
+                var sentPacketData = message.GetPacket(paddingMultiplier, null);
+                messageSent(this, new RawMessageEventArgs("SSH", sentPacketData, 9, sentPacketData.Length - 9));
+            }
+        }
+
+        private void OnMessageReceived(byte[] data, int offset, int count)
+        {
+            var messageReceived = MessageReceived;
+            if (messageReceived != null)
+            {
+                messageReceived(this, new RawMessageEventArgs("SSH", data, offset, count));
+            }
+        }
+
         #region Message loading functions
 
         /// <summary>
@@ -1733,6 +1789,8 @@ namespace Renci.SshNet
         private Message LoadMessage(byte[] data, int offset, int count)
         {
             var messageType = data[offset];
+
+            OnMessageReceived(data, offset, count);
 
             var message = _sshMessageFactory.Create(messageType);
             message.Load(data, offset + 1, count - 1);
